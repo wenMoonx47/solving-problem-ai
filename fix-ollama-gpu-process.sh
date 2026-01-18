@@ -19,22 +19,25 @@ echo "║         Fix Ollama GPU (Process Mode)                         ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Step 1: Check GPU
+# Step 1: Check GPU + CUDA driver
 echo -e "${CYAN}Step 1: Checking GPU...${NC}"
 if nvidia-smi > /dev/null 2>&1; then
     echo -e "${GREEN}✓ NVIDIA GPU detected${NC}"
-    nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+    nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 else
     echo -e "${RED}✗ No NVIDIA GPU found!${NC}"
     exit 1
 fi
 
-# Step 2: Stop any running Ollama processes
-echo -e "\n${CYAN}Step 2: Stopping Ollama processes...${NC}"
-pkill ollama || true
-pkill -f "ollama serve" || true
-sleep 3
-echo -e "${GREEN}✓ Ollama processes stopped${NC}"
+echo -e "\n${CYAN}Step 1b: Checking CUDA driver libraries...${NC}"
+if ldconfig -p 2>/dev/null | grep -q "libcuda.so.1"; then
+    echo -e "${GREEN}✓ libcuda.so.1 found${NC}"
+else
+    echo -e "${RED}✗ libcuda.so.1 NOT found${NC}"
+    echo -e "${YELLOW}Ollama cannot use GPU without NVIDIA driver libraries.${NC}"
+    echo -e "${YELLOW}Fix: install the NVIDIA driver on the server.${NC}"
+    exit 1
+fi
 
 # Step 3: Set GPU environment variables
 echo -e "\n${CYAN}Step 3: Configuring GPU environment...${NC}"
@@ -46,12 +49,15 @@ cat > start-ollama-gpu.sh << 'EOF'
 
 # Force GPU usage - ALL important environment variables
 export CUDA_VISIBLE_DEVICES=0,1        # Use both RTX A4000 GPUs
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+export OLLAMA_LLM_LIBRARY=cuda         # Force CUDA backend
 export OLLAMA_NUM_GPU=99               # Force all layers to GPU
 export OLLAMA_MAX_LOADED_MODELS=2      # Allow 2 models in VRAM
 export OLLAMA_NUM_PARALLEL=2           # Parallel requests
 export OLLAMA_HOST=0.0.0.0:11434       # Listen on all interfaces
 export OLLAMA_KEEP_ALIVE=24h           # Keep models loaded
 export OLLAMA_FLASH_ATTENTION=1        # Use flash attention on GPU
+export OLLAMA_DEBUG=1                  # Verbose GPU logs
 
 # Verify CUDA is available
 if command -v nvidia-smi &> /dev/null; then
@@ -68,12 +74,21 @@ if [ -d "/usr/local/cuda" ]; then
     echo "✓ CUDA libraries configured"
 fi
 
+# Locate Ollama binary
+OLLAMA_BIN="$(command -v ollama || true)"
+if [ -z "$OLLAMA_BIN" ]; then
+    echo "✗ ollama binary not found in PATH"
+    exit 1
+fi
+
 # Start Ollama with verbose output
 echo "Starting Ollama with GPU support..."
 echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 echo "OLLAMA_NUM_GPU=$OLLAMA_NUM_GPU"
+echo "OLLAMA_LLM_LIBRARY=$OLLAMA_LLM_LIBRARY"
+echo "OLLAMA_BIN=$OLLAMA_BIN"
 
-ollama serve
+exec "$OLLAMA_BIN" serve
 EOF
 
 chmod +x start-ollama-gpu.sh
