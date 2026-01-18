@@ -39,6 +39,16 @@ else
     exit 1
 fi
 
+# Step 2: Ensure Ollama is not already running (must restart to apply env)
+echo -e "\n${CYAN}Step 2: Checking Ollama process...${NC}"
+if pgrep ollama > /dev/null; then
+    echo -e "${RED}✗ Ollama is already running${NC}"
+    echo -e "${YELLOW}Please stop it first: pkill ollama${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✓ Ollama is not running${NC}"
+fi
+
 # Step 3: Set GPU environment variables
 echo -e "\n${CYAN}Step 3: Configuring GPU environment...${NC}"
 
@@ -48,6 +58,7 @@ cat > start-ollama-gpu.sh << 'EOF'
 # Start Ollama with GPU support
 
 # Force GPU usage - ALL important environment variables
+unset OLLAMA_NO_GPU OLLAMA_DISABLE_GPU
 export CUDA_VISIBLE_DEVICES=0,1        # Use both RTX A4000 GPUs
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
 export OLLAMA_LLM_LIBRARY=cuda         # Force CUDA backend
@@ -58,6 +69,7 @@ export OLLAMA_HOST=0.0.0.0:11434       # Listen on all interfaces
 export OLLAMA_KEEP_ALIVE=24h           # Keep models loaded
 export OLLAMA_FLASH_ATTENTION=1        # Use flash attention on GPU
 export OLLAMA_DEBUG=1                  # Verbose GPU logs
+export OLLAMA_LOG_LEVEL=debug
 
 # Verify CUDA is available
 if command -v nvidia-smi &> /dev/null; then
@@ -72,6 +84,12 @@ if [ -d "/usr/local/cuda" ]; then
     export PATH=/usr/local/cuda/bin:$PATH
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
     echo "✓ CUDA libraries configured"
+fi
+
+# Ensure NVIDIA runtime library exists
+if ! ldconfig -p 2>/dev/null | grep -q "libcuda.so.1"; then
+    echo "✗ libcuda.so.1 not found - NVIDIA driver not installed"
+    exit 1
 fi
 
 # Locate Ollama binary
@@ -127,6 +145,14 @@ else
     echo -e "${YELLOW}⚠️  GPU not detected yet${NC}"
     echo -e "  This is normal for quick queries"
     echo -e "  Try a longer request and watch: watch -n 1 nvidia-smi"
+fi
+
+# Step 5b: Check Ollama log for CPU fallback
+if grep -q 'runner.vram="0 B"' ollama-gpu.log 2>/dev/null; then
+    echo -e "${RED}✗ Ollama is running on CPU (vram=0 B)${NC}"
+    echo -e "${YELLOW}This usually means the Ollama binary was built without CUDA.${NC}"
+    echo -e "${YELLOW}Fix: install the official GPU build of Ollama for Linux.${NC}"
+    exit 1
 fi
 
 # Wait for test to complete
