@@ -1,0 +1,29 @@
+# SolveAssist AI - Python Dependencies
+# All packages needed for offline operation
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+werkzeug==3.0.1
+
+# Image Processing & OCR
+pillow==10.1.0
+pytesseract==0.3.10
+opencv-python-headless==4.8.1.78
+numpy==1.26.2
+
+# AI Model Integration
+ollama==0.1.6
+httpx==0.25.2
+
+# Math Processing
+sympy==1.12
+latex2sympy2==1.9.1
+
+# Utilities
+python-dotenv==1.0.0
+base64io==1.0.3
+
+# Development
+gunicorn==21.2.0
+

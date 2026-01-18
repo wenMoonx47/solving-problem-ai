@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveAssist AI - Instant Problem-Solving Guidance</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Animated Background -->
+        <div class="bg-pattern">
+            <div class="bg-grid"></div>
+            <div class="bg-gradient"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 24h16M24 16v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>SolveAssist AI</h1>
+                    <span class="tagline">Instant problem-solving guidance</span>
+                </div>
+            </div>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="section-header">
+                    <h2>Capture Your Problem</h2>
+                    <p>Upload an image, take a photo, or type your question</p>
+                </div>
+
+                <!-- Capture Options -->
+                <div class="capture-options">
+                    <button class="capture-btn primary" id="uploadBtn">
+                        <div class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="17,8 12,3 7,8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <span>Upload Image</span>
+                    </button>
+                    
+                    <button class="capture-btn" id="cameraBtn">
+                        <div class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <span>Camera</span>
+                    </button>
+                    
+                    <button class="capture-btn" id="screenBtn">
+                        <div class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                        <span>Screen Capture</span>
+                    </button>
+                    
+                    <button class="capture-btn" id="textBtn">
+                        <div class="btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="17" y1="10" x2="3" y2="10"/>
+                                <line x1="21" y1="6" x2="3" y2="6"/>
+                                <line x1="21" y1="14" x2="3" y2="14"/>
+                                <line x1="17" y1="18" x2="3" y2="18"/>
+                            </svg>
+                        </div>
+                        <span>Type Problem</span>
+                    </button>
+                </div>
+
+                <!-- Hidden file input -->
+                <input type="file" id="fileInput" accept="image/*" hidden>
+
+                <!-- Preview Area -->
+                <div class="preview-area" id="previewArea">
+                    <div class="preview-placeholder">
+                        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="8" y="12" width="48" height="40" rx="4"/>
+                            <circle cx="22" cy="28" r="6"/>
+                            <path d="M56 44l-12-12-16 16"/>
+                            <path d="M28 52l-8-8-12 12"/>
+                        </svg>
+                        <p>Your captured problem will appear here</p>
+                    </div>
+                    <img id="previewImage" class="preview-image" alt="Problem preview">
+                </div>
+
+                <!-- Text Input Area -->
+                <div class="text-input-area" id="textInputArea">
+                    <textarea id="problemText" placeholder="Type or paste your problem here...
+
+Example:
+• Solve for x: 2x + 5 = 15
+• A car travels 120 km in 2 hours. What is its average speed?
+• Balance the equation: H2 + O2 → H2O"></textarea>
+                </div>
+
+                <!-- Camera Modal -->
+                <div class="camera-modal" id="cameraModal">
+                    <div class="camera-container">
+                        <video id="cameraVideo" autoplay playsinline></video>
+                        <canvas id="cameraCanvas" hidden></canvas>
+                        <div class="camera-controls">
+                            <button class="camera-close" id="cameraClose">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                            <button class="camera-capture" id="cameraCapture">
+                                <div class="capture-ring"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="options-panel">
+                    <div class="option-group">
+                        <label class="option-label">Subject</label>
+                        <div class="select-wrapper">
+                            <select id="subjectSelect">
+                                <option value="auto">Auto-detect</option>
+                                <option value="math">Mathematics</option>
+                                <option value="physics">Physics</option>
+                                <option value="chemistry">Chemistry</option>
+                                <option value="word_problem">Word Problem</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="toggle-option">
+                            <input type="checkbox" id="showAnswer" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Show Final Answer</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="solve-btn" id="solveBtn" disabled>
+                    <span class="solve-text">Analyze & Solve</span>
+                    <div class="solve-loader">
+                        <div class="loader-ring"></div>
+                    </div>
+                </button>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection">
+                <div class="section-header">
+                    <h2>Solution</h2>
+                    <div class="result-badges">
+                        <span class="badge" id="problemTypeBadge">Math</span>
+                    </div>
+                </div>
+
+                <!-- Extracted Text -->
+                <div class="result-card" id="extractedTextCard">
+                    <div class="card-header">
+                        <h3>Extracted Text</h3>
+                        <button class="card-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6,9 12,15 18,9"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <pre id="extractedText"></pre>
+                    </div>
+                </div>
+
+                <!-- Solution Steps -->
+                <div class="result-card solution-card">
+                    <div class="card-header">
+                        <h3>Step-by-Step Solution</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="solution-content" id="solutionContent">
+                            <!-- Solution will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="result-actions">
+                    <button class="action-btn" id="copyBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                        Copy Solution
+                    </button>
+                    <button class="action-btn" id="newProblemBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1,4 1,10 7,10"/>
+                            <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                        </svg>
+                        New Problem
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>SolveAssist AI — Empowering teachers and students through AI-assisted learning</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

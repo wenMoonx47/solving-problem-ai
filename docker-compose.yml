@@ -1,0 +1,42 @@
+# ============================================
+# SolveAssist AI - Docker Compose
+# ============================================
+# Port: 3333
+# ============================================
+
+version: '3.8'
+
+services:
+  solveassist:
+    build: .
+    image: solveassist-ai:latest
+    container_name: solveassist-ai
+    ports:
+      - "3333:3333"
+    restart: unless-stopped
+    volumes:
+      # Persist Ollama models (optional, for development)
+      # - ollama_data:/root/.ollama
+      # Persist user data (optional)
+      # - ./data:/app/data
+      []
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3333/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 8G
+
+# Optional: Persist data
+# volumes:
+#   ollama_data:
+

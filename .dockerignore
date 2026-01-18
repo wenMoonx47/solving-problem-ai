@@ -1,0 +1,59 @@
+# ============================================
+# SolveAssist AI - Docker Ignore
+# ============================================
+
+# Virtual environment (will be created in Docker)
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker export (don't include in image)
+docker-export/
+*.tar
+*.tar.gz
+
+# Documentation (not needed in runtime)
+*.md
+!README.md
+docs/
+
+# Development files
+*.log
+*.tmp
+.env.local
+.env.development
+
+# Test files
+test_*.py
+test_*.sh
+*_test.py
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development images
+*.png
+*.jpg
+*.jpeg
+
+# Word documents
+*.docx
+
