@@ -6,6 +6,9 @@ AI-powered problem-solving assistant for teaching and learning
 import os
 import base64
 import json
+import time
+import traceback
+import uuid
 from io import BytesIO
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -100,47 +103,51 @@ def analyze_image():
     Accepts: base64 image or file upload
     Returns: Extracted text, problem type, and solution steps
     """
+    request_id = uuid.uuid4().hex[:8]
+    start_time = time.time()
     try:
         image_data = None
         
         # Debug logging
-        print(f"[DEBUG] Content-Type: {request.content_type}")
-        print(f"[DEBUG] Has files: {'image' in request.files}")
-        print(f"[DEBUG] Has JSON: {request.json is not None}")
+        print(f"[DEBUG] [{request_id}] Content-Type: {request.content_type}")
+        print(f"[DEBUG] [{request_id}] Has files: {'image' in request.files}")
+        print(f"[DEBUG] [{request_id}] Has JSON: {request.json is not None}")
         if request.json:
-            print(f"[DEBUG] JSON keys: {list(request.json.keys())}")
+            print(f"[DEBUG] [{request_id}] JSON keys: {list(request.json.keys())}")
         
         # Handle different input methods
         if 'image' in request.files:
             file = request.files['image']
             image_data = file.read()
-            print(f"[DEBUG] Loaded image from file upload")
+            print(f"[DEBUG] [{request_id}] Loaded image from file upload")
         elif request.json and 'image_base64' in request.json:
             base64_data = request.json['image_base64']
-            print(f"[DEBUG] Base64 data length: {len(base64_data)}")
+            print(f"[DEBUG] [{request_id}] Base64 data length: {len(base64_data)}")
             # Remove data URL prefix if present
             if ',' in base64_data:
                 base64_data = base64_data.split(',')[1]
-                print(f"[DEBUG] Removed data URL prefix")
+                print(f"[DEBUG] [{request_id}] Removed data URL prefix")
             image_data = base64.b64decode(base64_data)
-            print(f"[DEBUG] Decoded image data: {len(image_data)} bytes")
+            print(f"[DEBUG] [{request_id}] Decoded image data: {len(image_data)} bytes")
         else:
             error_msg = f"No image provided. Has files: {'image' in request.files}, Has JSON: {request.json is not None}"
-            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] [{request_id}] {error_msg}")
             return jsonify({'error': 'No image provided', 'debug': error_msg}), 400
 
         # Process and enhance image for better AI reading
         image = Image.open(BytesIO(image_data))
-        print(f"[DEBUG] Image opened: {image.size}, mode: {image.mode}")
+        print(f"[DEBUG] [{request_id}] Image opened: {image.size}, mode: {image.mode}")
         
         # Preprocess image for better vision model accuracy
+        preprocess_start = time.time()
         image = preprocess_for_vision(image)
+        print(f"[DEBUG] [{request_id}] Preprocess time: {time.time() - preprocess_start:.2f}s")
         
         # Re-encode the processed image
         buffered = BytesIO()
         image.save(buffered, format="PNG")
         image_data = buffered.getvalue()
-        print(f"[DEBUG] Image preprocessed for AI vision")
+        print(f"[DEBUG] [{request_id}] Image preprocessed for AI vision")
         
         # Get options from request
         options = request.json if request.json else {}
@@ -151,22 +158,24 @@ def analyze_image():
         # OCR often misreads math symbols, equations, and handwriting
         # The vision model is trained to handle these better
         extracted_text = "[Vision model will read directly from image]"
-        print("[INFO] Using vision model for direct image reading (more accurate than OCR for math)")
+        print(f"[INFO] [{request_id}] Using vision model for direct image reading (more accurate than OCR for math)")
         
         # Step 2: Detect problem type
-        print(f"[DEBUG] Detecting problem type...")
+        print(f"[DEBUG] [{request_id}] Detecting problem type...")
         problem_type = problem_solver.detect_problem_type(extracted_text, subject_hint)
-        print(f"[DEBUG] Problem type: {problem_type}")
+        print(f"[DEBUG] [{request_id}] Problem type: {problem_type}")
         
         # Step 3: Get AI solution with step-by-step explanation
-        print(f"[DEBUG] Calling AI solver... (this may take 1-2 minutes for vision models)")
+        print(f"[DEBUG] [{request_id}] Calling AI solver... (this may take 1-2 minutes for vision models)")
+        solve_start = time.time()
         solution = problem_solver.solve(
             image_data=image_data,
             extracted_text=extracted_text,
             problem_type=problem_type,
             show_answer=show_answer
         )
-        print(f"[DEBUG] Solution received")
+        print(f"[DEBUG] [{request_id}] Solution received in {time.time() - solve_start:.2f}s")
+        print(f"[INFO] [{request_id}] Total request time: {time.time() - start_time:.2f}s")
         
         return jsonify({
             'success': True,
@@ -176,9 +185,12 @@ def analyze_image():
         })
         
     except Exception as e:
+        print(f"[ERROR] [{request_id}] analyze_image failed: {e}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'request_id': request_id
         }), 500
 
 

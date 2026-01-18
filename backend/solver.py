@@ -6,6 +6,8 @@ AI-powered solution generation using local Ollama models
 import base64
 import json
 import re
+import time
+import traceback
 from typing import Optional, Dict, Any
 import ollama
 from gpu_detector import gpu_detector
@@ -89,6 +91,7 @@ Keep it concise.""",
                 print(f"[INFO] GPU Mode: Using optimized settings for {gpu_detector.gpu_info['name']}")
             else:
                 print(f"[INFO] CPU Mode: Using conservative settings for speed")
+            print(f"[DEBUG] Ollama options: {self.optimal_settings}")
                 
         except Exception as e:
             print(f"Warning: Could not initialize Ollama client: {e}")
@@ -235,6 +238,8 @@ Keep it concise.""",
             else:
                 return self._solve_with_text(extracted_text, system_prompt, problem_type)
         except Exception as e:
+            print(f"[ERROR] solve() failed: {e}")
+            print(traceback.format_exc())
             return {
                 'steps': [],
                 'explanation': f"Error solving problem: {str(e)}",
@@ -274,6 +279,7 @@ Step 2: [solving step]
         try:
             print(f"[DEBUG] Sending request to vision model: {self.VISION_MODEL}")
             print(f"[INFO] Vision model inference may take 1-3 minutes on first run...")
+            call_start = time.time()
             
             response = self.client.chat(
                 model=self.VISION_MODEL,
@@ -288,11 +294,12 @@ Step 2: [solving step]
                 options=self.optimal_settings  # Auto-adjust based on GPU/CPU
             )
             
-            print(f"[DEBUG] Vision model response received")
+            print(f"[DEBUG] Vision model response received in {time.time() - call_start:.2f}s")
             return self._parse_solution(response['message']['content'], problem_type)
             
         except Exception as e:
             print(f"[ERROR] Vision model failed: {e}")
+            print(traceback.format_exc())
             # Fallback to text-only if vision fails
             print(f"[INFO] Falling back to text-only model")
             return self._solve_with_text(extracted_text, system_prompt, problem_type)
@@ -313,6 +320,7 @@ Provide a clear, educational explanation suitable for teaching."""
 
         try:
             print(f"[DEBUG] Sending request to text model: {self.TEXT_MODEL}")
+            call_start = time.time()
             
             response = self.client.chat(
                 model=self.TEXT_MODEL,
@@ -323,11 +331,12 @@ Provide a clear, educational explanation suitable for teaching."""
                 options=self.optimal_settings  # Auto-adjust based on GPU/CPU
             )
             
-            print(f"[DEBUG] Text model response received")
+            print(f"[DEBUG] Text model response received in {time.time() - call_start:.2f}s")
             return self._parse_solution(response['message']['content'], problem_type)
             
         except Exception as e:
             print(f"[ERROR] Text model failed: {e}")
+            print(traceback.format_exc())
             return {
                 'steps': [],
                 'explanation': f"Could not connect to AI model. Please ensure Ollama is running.\n\nError: {str(e)}",
