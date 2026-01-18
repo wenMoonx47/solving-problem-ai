@@ -44,14 +44,35 @@ cat > start-ollama-gpu.sh << 'EOF'
 #!/bin/bash
 # Start Ollama with GPU support
 
-# Enable GPU
-export CUDA_VISIBLE_DEVICES=0,1  # Use both RTX A4000 GPUs
-export OLLAMA_MAX_LOADED_MODELS=2
-export OLLAMA_NUM_PARALLEL=2
-export OLLAMA_HOST=0.0.0.0:11434
+# Force GPU usage - ALL important environment variables
+export CUDA_VISIBLE_DEVICES=0,1        # Use both RTX A4000 GPUs
+export OLLAMA_NUM_GPU=99               # Force all layers to GPU
+export OLLAMA_MAX_LOADED_MODELS=2      # Allow 2 models in VRAM
+export OLLAMA_NUM_PARALLEL=2           # Parallel requests
+export OLLAMA_HOST=0.0.0.0:11434       # Listen on all interfaces
+export OLLAMA_KEEP_ALIVE=24h           # Keep models loaded
+export OLLAMA_FLASH_ATTENTION=1        # Use flash attention on GPU
 
-# Start Ollama
+# Verify CUDA is available
+if command -v nvidia-smi &> /dev/null; then
+    echo "✓ NVIDIA GPU detected"
+    nvidia-smi --query-gpu=name --format=csv,noheader
+else
+    echo "⚠️  nvidia-smi not found - GPU may not work!"
+fi
+
+# Check CUDA libraries
+if [ -d "/usr/local/cuda" ]; then
+    export PATH=/usr/local/cuda/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+    echo "✓ CUDA libraries configured"
+fi
+
+# Start Ollama with verbose output
 echo "Starting Ollama with GPU support..."
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+echo "OLLAMA_NUM_GPU=$OLLAMA_NUM_GPU"
+
 ollama serve
 EOF
 
