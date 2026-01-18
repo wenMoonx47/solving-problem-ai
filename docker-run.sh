@@ -17,6 +17,18 @@ NC='\033[0m'
 IMAGE_NAME="solveassist-ai"
 CONTAINER_NAME="solveassist-ai"
 PORT=3333
+GPU_FLAG=""
+
+if command -v nvidia-smi > /dev/null 2>&1; then
+    if docker info 2>/dev/null | grep -q "Runtimes:.*nvidia"; then
+        GPU_FLAG="--gpus all"
+        echo -e "${GREEN}✓ NVIDIA runtime detected, enabling GPU${NC}"
+    else
+        echo -e "${YELLOW}! NVIDIA runtime not found, running on CPU${NC}"
+    fi
+else
+    echo -e "${YELLOW}! nvidia-smi not found, running on CPU${NC}"
+fi
 
 echo -e "${CYAN}"
 echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -37,6 +49,7 @@ docker run -d \
     --name ${CONTAINER_NAME} \
     -p ${PORT}:3333 \
     --restart unless-stopped \
+    ${GPU_FLAG} \
     ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✓ Container started!${NC}"
