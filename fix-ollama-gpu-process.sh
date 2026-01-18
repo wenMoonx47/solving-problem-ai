@@ -13,6 +13,9 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 echo -e "${CYAN}"
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║         Fix Ollama GPU (Process Mode)                         ║"
@@ -53,7 +56,8 @@ fi
 echo -e "\n${CYAN}Step 3: Configuring GPU environment...${NC}"
 
 # Create a startup script with GPU enabled
-cat > start-ollama-gpu.sh << 'EOF'
+START_SCRIPT="$SCRIPT_DIR/start-ollama-gpu.sh"
+cat > "$START_SCRIPT" << 'EOF'
 #!/bin/bash
 # Start Ollama with GPU support
 
@@ -109,12 +113,12 @@ echo "OLLAMA_BIN=$OLLAMA_BIN"
 exec "$OLLAMA_BIN" serve
 EOF
 
-chmod +x start-ollama-gpu.sh
+chmod +x "$START_SCRIPT"
 echo -e "${GREEN}✓ GPU startup script created${NC}"
 
 # Step 4: Start Ollama with GPU
 echo -e "\n${CYAN}Step 4: Starting Ollama with GPU...${NC}"
-nohup ./start-ollama-gpu.sh > ollama-gpu.log 2>&1 &
+nohup "$START_SCRIPT" > "$SCRIPT_DIR/ollama-gpu.log" 2>&1 &
 sleep 5
 
 # Verify Ollama is running
