@@ -8,6 +8,7 @@ import json
 import re
 from typing import Optional, Dict, Any
 import ollama
+from gpu_detector import gpu_detector
 
 
 class ProblemSolver:
@@ -75,12 +76,24 @@ Keep it concise.""",
         self._init_client()
     
     def _init_client(self):
-        """Initialize Ollama client"""
+        """Initialize Ollama client with GPU support"""
         try:
-            self.client = ollama.Client()
+            import httpx
+            timeout = httpx.Timeout(300.0, connect=10.0)
+            self.client = ollama.Client(timeout=timeout)
+            
+            # Get optimal settings based on GPU availability
+            self.optimal_settings = gpu_detector.get_optimal_settings()
+            
+            if gpu_detector.has_gpu:
+                print(f"[INFO] GPU Mode: Using optimized settings for {gpu_detector.gpu_info['name']}")
+            else:
+                print(f"[INFO] CPU Mode: Using conservative settings for speed")
+                
         except Exception as e:
             print(f"Warning: Could not initialize Ollama client: {e}")
             self.client = None
+            self.optimal_settings = {}
     
     def check_model_status(self) -> Dict[str, Any]:
         """Check if required AI models are available"""
@@ -272,13 +285,7 @@ Step 2: [solving step]
                         'images': [image_base64]
                     }
                 ],
-                options={
-                    'num_ctx': 1024,  # Smaller context for faster CPU inference
-                    'num_predict': 500,  # Limit response length for speed
-                    'temperature': 0.3,  # Lower temperature for more focused responses
-                    'top_p': 0.9,
-                    'top_k': 40,
-                }
+                options=self.optimal_settings  # Auto-adjust based on GPU/CPU
             )
             
             print(f"[DEBUG] Vision model response received")
@@ -313,13 +320,7 @@ Provide a clear, educational explanation suitable for teaching."""
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': user_prompt}
                 ],
-                options={
-                    'num_ctx': 1024,  # Smaller context for faster CPU inference
-                    'num_predict': 500,  # Limit response length for speed
-                    'temperature': 0.3,  # Lower temperature for more focused responses
-                    'top_p': 0.9,
-                    'top_k': 40,
-                }
+                options=self.optimal_settings  # Auto-adjust based on GPU/CPU
             )
             
             print(f"[DEBUG] Text model response received")
