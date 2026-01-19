@@ -40,7 +40,6 @@ echo -e "${CYAN}Step 1: Building Docker image...${NC}"
 docker build \
     --no-cache \
     -t "${FULL_IMAGE_NAME}" \
-    -t "${IMAGE_NAME}:latest" \
     .
 
 if [ $? -eq 0 ]; then

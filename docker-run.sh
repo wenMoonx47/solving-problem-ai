@@ -15,8 +15,11 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 IMAGE_NAME="solveassist-ai"
+IMAGE_TAG="v1.0-offline"
+FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 CONTAINER_NAME="solveassist-ai"
 PORT=3333
+HOST_BIND="0.0.0.0"
 GPU_FLAG=""
 
 if command -v nvidia-smi > /dev/null 2>&1; then
@@ -47,10 +50,10 @@ fi
 echo -e "${CYAN}Starting SolveAssist AI container...${NC}"
 docker run -d \
     --name ${CONTAINER_NAME} \
-    -p ${PORT}:3333 \
+    -p ${HOST_BIND}:${PORT}:3333 \
     --restart unless-stopped \
     ${GPU_FLAG} \
-    ${IMAGE_NAME}:latest
+    ${FULL_IMAGE_NAME}
 
 echo -e "${GREEN}✓ Container started!${NC}"
 echo ""
